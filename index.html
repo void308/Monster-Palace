@@ -4,9 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Monster Wave Slayer</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
   <style>
     body {
       margin: 0;
@@ -15,12 +14,17 @@
       color: #ffffff;
       font-family: sans-serif;
     }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
-  <script type="text/babel">
+  <script>
+    const e = React.createElement;
     const { useState, useEffect, useRef } = React;
 
     const HEROES = [
@@ -303,7 +307,7 @@
 
       return {
         id: 'ab_' + Math.random().toString(36).substr(2, 9),
-        name: `${prefix} ${elem.name} ${form.name}`,
+        name: prefix + ' ' + elem.name + ' ' + form.name,
         cooldown: cd,
         currentCd: 0,
         key: fixedKey,
@@ -311,7 +315,7 @@
         element: elem.type,
         color: elem.color,
         damage: baseDmg,
-        description: `Deals ${baseDmg} ${elem.name.toLowerCase()} damage with ${form.name.toLowerCase()} effect.`
+        description: 'Deals ' + baseDmg + ' ' + elem.name.toLowerCase() + ' damage with ' + form.name.toLowerCase() + ' effect.'
       };
     }
 
@@ -340,7 +344,7 @@
       }
 
       const baseDmg = 15 + wave * 5;
-      const name = `${chosenRarity.name} ${SWORD_NAMES[Math.floor(Math.random() * SWORD_NAMES.length)]}`;
+      const name = chosenRarity.name + ' ' + SWORD_NAMES[Math.floor(Math.random() * SWORD_NAMES.length)];
       const damage = Math.floor(baseDmg * chosenRarity.multiplier * (0.9 + Math.random() * 0.2));
 
       return {
@@ -417,7 +421,7 @@
           isDashing: false,
           sword: { name: "Squire's Steel", rarity: 'Common', color: '#bdc3c7', damage: 20 },
           abilities: [
-            this.selectedHero ? { ...this.selectedHero.startingAbility } : { ...HEROES[0].startingAbility }
+            this.selectedHero ? Object.assign({}, this.selectedHero.startingAbility) : Object.assign({}, HEROES[0].startingAbility)
           ],
           money: 0,
           attackCooldown: 0,
@@ -494,8 +498,8 @@
             wave: this.wave,
             sword: this.player.sword,
             abilities: [...this.player.abilities],
-            upgrades: { ...this.upgrades },
-            heroUpgradeLevels: { ...this.heroUpgradeLevels },
+            upgrades: Object.assign({}, this.upgrades),
+            heroUpgradeLevels: Object.assign({}, this.heroUpgradeLevels),
             lastRollResult: this.lastRollResult,
             waveState: this.waveState
           });
@@ -512,7 +516,7 @@
           this.monsters.push({
             id: 'boss_' + this.wave,
             type: 'BOSS',
-            name: `Palace Overlord Wave ${this.wave}`,
+            name: 'Palace Overlord Wave ' + this.wave,
             x: this.canvas.width - 150,
             y: 350,
             width: 80,
@@ -563,7 +567,7 @@
             const xPos = spawnOnRight ? this.canvas.width + 50 + i * 70 : -50 - i * 70;
 
             this.monsters.push({
-              id: `m_${this.wave}_${i}`,
+              id: 'm_' + this.wave + '_' + i,
               type: mType,
               x: xPos,
               y: 400,
@@ -1086,11 +1090,11 @@
               }
               const gemReward = Math.floor(Math.random() * 6) + 10 + extraGems;
               this.gems += gemReward;
-              this.addDamageText(m.x, m.y - 20, `+${gemReward} GEMS!`, '#9b59b6', true);
+              this.addDamageText(m.x, m.y - 20, '+' + gemReward + ' GEMS!', '#9b59b6', true);
             } else {
               if (Math.random() < 0.15) {
                 this.gems += 1;
-                this.addDamageText(m.x, m.y - 20, `+1 GEM!`, '#9b59b6');
+                this.addDamageText(m.x, m.y - 20, '+1 GEM!', '#9b59b6');
               }
             }
 
@@ -1175,7 +1179,7 @@
         this.damageTexts.push({
           x,
           y,
-          text: isCrit ? `CRIT! ${text}` : text,
+          text: isCrit ? 'CRIT! ' + text : text,
           color,
           isCrit,
           life: 40
@@ -1187,10 +1191,10 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         const themeHue = (this.wave * 25) % 360;
-        ctx.fillStyle = `hsl(${themeHue}, 20%, 12%)`;
+        ctx.fillStyle = 'hsl(' + themeHue + ', 20%, 12%)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.strokeStyle = `hsl(${themeHue}, 30%, 22%)`;
+        ctx.strokeStyle = 'hsl(' + themeHue + ', 30%, 22%)';
         ctx.lineWidth = 4;
         for (let i = 50; i < canvas.width; i += 180) {
           ctx.beginPath();
@@ -1359,7 +1363,7 @@
 
       useEffect(() => {
         const engine = new GameEngine(canvasRef.current, (updated) => {
-          setGameState(prev => ({ ...prev, ...updated }));
+          setGameState(prev => Object.assign({}, prev, updated));
         });
         engineRef.current = engine;
 
@@ -1369,7 +1373,7 @@
       const handleSelectHero = (hero) => {
         if (!unlockedHeroes.includes(hero.id)) {
           if (gameState.gems >= hero.cost) {
-            setGameState(prev => ({ ...prev, gems: prev.gems - hero.cost }));
+            setGameState(prev => Object.assign({}, prev, { gems: prev.gems - hero.cost }));
             setUnlockedHeroes(prev => [...prev, hero.id]);
             setSelectedHero(hero);
           }
@@ -1394,8 +1398,8 @@
         }
       }, [gameState.waveState, gameState.wave]);
 
-      return (
-        <div style={{
+      return e('div', {
+        style: {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -1404,12 +1408,11 @@
           color: '#ffffff',
           fontFamily: 'sans-serif',
           padding: '20px'
-        }}>
-          <h1 style={{ margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '2px' }}>
-            Monster Wave Slayer
-          </h1>
-
-          <div style={{
+        }
+      },
+        e('h1', { style: { margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '2px' } }, 'Monster Wave Slayer'),
+        e('div', {
+          style: {
             display: 'flex',
             gap: '20px',
             fontSize: '18px',
@@ -1417,418 +1420,328 @@
             padding: '10px 20px',
             borderRadius: '8px',
             marginBottom: '15px'
-          }}>
-            <span>Floor / Wave: <strong style={{ color: '#f1c40f' }}>{gameState.wave}</strong></span>
-            <span>Gold: <strong style={{ color: '#2ecc71' }}>${gameState.money}</strong></span>
-            <span>Gems: <strong style={{ color: '#9b59b6' }}>💎 {gameState.gems}</strong></span>
-            <span>HP: <strong style={{ color: '#e74c3c' }}>{gameState.playerHp} / {gameState.playerMaxHp}</strong></span>
-          </div>
-
-          {gameState.waveState === 'HERO_SELECT' && (
-            <div style={{
-              backgroundColor: '#2c3e50',
-              padding: '25px',
-              borderRadius: '12px',
-              maxWidth: '850px',
-              width: '100%',
-              textAlign: 'center'
-            }}>
-              <h2>Choose Your Hero</h2>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(5, 1fr)',
-                gap: '12px',
-                margin: '20px 0',
-                maxHeight: '400px',
-                overflowY: 'auto'
-              }}>
-                {HEROES.map(h => {
-                  const isUnlocked = unlockedHeroes.includes(h.id);
-                  const isSelected = selectedHero.id === h.id;
-                  return (
-                    <div
-                      key={h.id}
-                      onClick={() => handleSelectHero(h)}
-                      style={{
-                        backgroundColor: isSelected ? '#34495e' : '#1a252f',
-                        border: `3px solid ${isSelected ? h.color : (isUnlocked ? '#7f8c8d' : '#e74c3c')}`,
-                        borderRadius: '8px',
-                        padding: '10px',
-                        cursor: 'pointer',
-                        opacity: isUnlocked ? 1 : 0.75
-                      }}
-                    >
-                      <h3 style={{ margin: '5px 0', color: h.color }}>{h.name}</h3>
-                      <p style={{ fontSize: '11px', height: '36px', overflow: 'hidden' }}>{h.desc}</p>
-                      {!isUnlocked ? (
-                        <button style={{
-                          backgroundColor: '#9b59b6',
-                          border: 'none',
-                          color: '#fff',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}>
-                          Unlock (💎 {h.cost})
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: '12px', color: '#2ecc71' }}>{isSelected ? 'SELECTED' : 'UNLOCKED'}</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <button
-                onClick={handleStartGame}
-                style={{
-                  backgroundColor: '#2ecc71',
-                  border: 'none',
-                  padding: '12px 30px',
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  color: '#fff',
-                  borderRadius: '6px',
-                  cursor: 'pointer'
-                }}
-              >
-                ASCEND PALACE
-              </button>
-            </div>
-          )}
-
-          {gameState.waveState !== 'HERO_SELECT' && (
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-              <div style={{ position: 'relative' }}>
-                <canvas
-                  ref={canvasRef}
-                  width={800}
-                  height={500}
-                  style={{
-                    border: '4px solid #34495e',
-                    borderRadius: '8px',
-                    backgroundColor: '#000'
-                  }}
-                />
-
-                {gameState.waveState === 'DRAFT' && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    backgroundColor: 'rgba(0,0,0,0.85)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderRadius: '8px'
-                  }}>
-                    <h2 style={{ color: '#f1c40f', marginBottom: '20px' }}>CHOOSE AN ABILITY CARD</h2>
-                    <div style={{ display: 'flex', gap: '15px' }}>
-                      {draftCards.map(card => (
-                        <div
-                          key={card.id}
-                          onClick={() => engineRef.current.selectAbilityDraft(card)}
-                          style={{
-                            backgroundColor: '#2c3e50',
-                            border: `3px solid ${card.color}`,
-                            borderRadius: '10px',
-                            padding: '15px',
-                            width: '180px',
-                            textAlign: 'center',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <h3 style={{ color: card.color, margin: '5px 0' }}>{card.name}</h3>
-                          <p style={{ fontSize: '13px', color: '#bdc3c7' }}>{card.description}</p>
-                          <div style={{ fontSize: '12px', marginTop: '10px' }}>Cooldown: {card.cooldown}s</div>
-                          <button style={{
-                            marginTop: '15px',
-                            backgroundColor: card.color,
-                            border: 'none',
-                            color: '#fff',
-                            padding: '6px 12px',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}>
-                            Select
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {gameState.waveState === 'GAMEOVER' && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    backgroundColor: 'rgba(0,0,0,0.9)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderRadius: '8px'
-                  }}>
-                    <h1 style={{ color: '#e74c3c', fontSize: '48px', margin: 0 }}>YOU WERE SLAIN</h1>
-                    <p>Physical traits reset. Gems are retained!</p>
-                    <button
-                      onClick={() => {
-                        setGameState(prev => ({ ...prev, waveState: 'HERO_SELECT' }));
-                      }}
-                      style={{
-                        backgroundColor: '#e74c3c',
-                        border: 'none',
-                        padding: '10px 25px',
-                        fontSize: '18px',
-                        color: '#fff',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        marginTop: '15px'
-                      }}
-                    >
-                      Return to Hero Select
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div style={{
-                width: '280px',
-                backgroundColor: '#2c3e50',
+          }
+        },
+          e('span', null, 'Floor / Wave: ', e('strong', { style: { color: '#f1c40f' } }, gameState.wave)),
+          e('span', null, 'Gold: ', e('strong', { style: { color: '#2ecc71' } }, '$' + gameState.money)),
+          e('span', null, 'Gems: ', e('strong', { style: { color: '#9b59b6' } }, '💎 ' + gameState.gems)),
+          e('span', null, 'HP: ', e('strong', { style: { color: '#e74c3c' } }, gameState.playerHp + ' / ' + gameState.playerMaxHp))
+        ),
+        gameState.waveState === 'HERO_SELECT' ? e('div', {
+          style: {
+            backgroundColor: '#2c3e50',
+            padding: '25px',
+            borderRadius: '12px',
+            maxWidth: '850px',
+            width: '100%',
+            textAlign: 'center'
+          }
+        },
+          e('h2', null, 'Choose Your Hero'),
+          e('div', {
+            style: {
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: '12px',
+              margin: '20px 0',
+              maxHeight: '400px',
+              overflowY: 'auto'
+            }
+          },
+            HEROES.map(h => {
+              const isUnlocked = unlockedHeroes.includes(h.id);
+              const isSelected = selectedHero.id === h.id;
+              return e('div', {
+                key: h.id,
+                onClick: () => handleSelectHero(h),
+                style: {
+                  backgroundColor: isSelected ? '#34495e' : '#1a252f',
+                  border: '3px solid ' + (isSelected ? h.color : (isUnlocked ? '#7f8c8d' : '#e74c3c')),
+                  borderRadius: '8px',
+                  padding: '10px',
+                  cursor: 'pointer',
+                  opacity: isUnlocked ? 1 : 0.75
+                }
+              },
+                e('h3', { style: { margin: '5px 0', color: h.color } }, h.name),
+                e('p', { style: { fontSize: '11px', height: '36px', overflow: 'hidden' } }, h.desc),
+                !isUnlocked ? e('button', {
+                  style: {
+                    backgroundColor: '#9b59b6',
+                    border: 'none',
+                    color: '#fff',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }
+                }, 'Unlock (💎 ' + h.cost + ')') : e('span', { style: { fontSize: '12px', color: '#2ecc71' } }, isSelected ? 'SELECTED' : 'UNLOCKED')
+              );
+            })
+          ),
+          e('button', {
+            onClick: handleStartGame,
+            style: {
+              backgroundColor: '#2ecc71',
+              border: 'none',
+              padding: '12px 30px',
+              fontSize: '20px',
+              fontWeight: 'bold',
+              color: '#fff',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }
+          }, 'ASCEND PALACE')
+        ) : e('div', { style: { display: 'flex', gap: '20px', alignItems: 'flex-start' } },
+          e('div', { style: { position: 'relative' } },
+            e('canvas', {
+              ref: canvasRef,
+              width: 800,
+              height: 500,
+              style: {
+                border: '4px solid #34495e',
                 borderRadius: '8px',
-                padding: '15px',
+                backgroundColor: '#000'
+              }
+            }),
+            gameState.waveState === 'DRAFT' && e('div', {
+              style: {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0,0,0,0.85)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '15px'
-              }}>
-                <div style={{ display: 'flex', gap: '5px' }}>
-                  <button
-                    onClick={() => setActiveTab('GACHA')}
-                    style={{
-                      flex: 1,
-                      padding: '8px',
-                      backgroundColor: activeTab === 'GACHA' ? '#34495e' : '#1a252f',
-                      color: '#fff',
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: '8px'
+              }
+            },
+              e('h2', { style: { color: '#f1c40f', marginBottom: '20px' } }, 'CHOOSE AN ABILITY CARD'),
+              e('div', { style: { display: 'flex', gap: '15px' } },
+                draftCards.map(card => e('div', {
+                  key: card.id,
+                  onClick: () => engineRef.current.selectAbilityDraft(card),
+                  style: {
+                    backgroundColor: '#2c3e50',
+                    border: '3px solid ' + card.color,
+                    borderRadius: '10px',
+                    padding: '15px',
+                    width: '180px',
+                    textAlign: 'center',
+                    cursor: 'pointer'
+                  }
+                },
+                  e('h3', { style: { color: card.color, margin: '5px 0' } }, card.name),
+                  e('p', { style: { fontSize: '13px', color: '#bdc3c7' } }, card.description),
+                  e('div', { style: { fontSize: '12px', marginTop: '10px' } }, 'Cooldown: ' + card.cooldown + 's'),
+                  e('button', {
+                    style: {
+                      marginTop: '15px',
+                      backgroundColor: card.color,
                       border: 'none',
+                      color: '#fff',
+                      padding: '6px 12px',
                       borderRadius: '4px',
                       cursor: 'pointer'
-                    }}
-                  >
-                    SWORD ROLL
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('TRAITS')}
-                    style={{
-                      flex: 1,
-                      padding: '8px',
-                      backgroundColor: activeTab === 'TRAITS' ? '#34495e' : '#1a252f',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    TRAITS
-                  </button>
-                </div>
-
-                {activeTab === 'GACHA' && (
-                  <div style={{ textAlign: 'center' }}>
-                    <h3>Equipped Weapon</h3>
-                    <div style={{
-                      backgroundColor: '#1a252f',
-                      padding: '12px',
-                      borderRadius: '6px',
-                      borderLeft: `5px solid ${gameState.sword.color}`
-                    }}>
-                      <div style={{ color: gameState.sword.color, fontWeight: 'bold' }}>{gameState.sword.name}</div>
-                      <div style={{ fontSize: '12px', color: '#7f8c8d' }}>Rarity: {gameState.sword.rarity}</div>
-                      <div style={{ fontSize: '16px', marginTop: '5px' }}>Damage: <strong>{gameState.sword.damage}</strong></div>
-                    </div>
-
-                    <div style={{ marginTop: '20px', position: 'relative' }}>
-                      {gameState.lastRollResult && (
-                        <div style={{
-                          backgroundColor: 'rgba(52, 73, 94, 0.9)',
-                          padding: '8px',
-                          borderRadius: '4px',
-                          marginBottom: '10px',
-                          border: `1px solid ${gameState.lastRollResult.color}`
-                        }}>
-                          <div style={{ fontSize: '11px' }}>Rolled:</div>
-                          <div style={{ color: gameState.lastRollResult.color }}>{gameState.lastRollResult.name} ({gameState.lastRollResult.damage} Dmg)</div>
-                        </div>
-                      )}
-
-                      <button
-                        onClick={() => engineRef.current?.rollGacha()}
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#f1c40f',
-                          border: 'none',
-                          padding: '12px',
-                          fontWeight: 'bold',
-                          fontSize: '16px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          color: '#2c3e50'
-                        }}
-                      >
-                        ROLL SWORD ($100)
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'TRAITS' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
-                    <h4>GLOBAL TRAITS</h4>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
-                      <div>
-                        <div>Strength (Lvl {gameState.upgrades.strength.level})</div>
-                        <div style={{ fontSize: '10px', color: '#7f8c8d' }}>+5% Total Damage</div>
-                      </div>
-                      <button
-                        onClick={() => engineRef.current?.buyUpgrade('strength')}
-                        style={{ backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
-                      >
-                        ${gameState.upgrades.strength.cost}
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
-                      <div>
-                        <div>Speed (Lvl {gameState.upgrades.speed.level})</div>
-                        <div style={{ fontSize: '10px', color: '#7f8c8d' }}>+2% Move Speed</div>
-                      </div>
-                      <button
-                        onClick={() => engineRef.current?.buyUpgrade('speed')}
-                        style={{ backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
-                      >
-                        ${gameState.upgrades.speed.cost}
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
-                      <div>
-                        <div>Dash [Q] (Lvl {gameState.upgrades.dash.level})</div>
-                        <div style={{ fontSize: '10px', color: '#7f8c8d' }}>Faster / Quicker Cd</div>
-                      </div>
-                      <button
-                        onClick={() => engineRef.current?.buyUpgrade('dash')}
-                        style={{ backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
-                      >
-                        ${gameState.upgrades.dash.cost}
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
-                      <div>
-                        <div>Air Jump (Double)</div>
-                        <div style={{ fontSize: '10px', color: '#7f8c8d' }}>Extra Boost Jump</div>
-                      </div>
-                      <button
-                        onClick={() => engineRef.current?.buyUpgrade('airJump')}
-                        disabled={gameState.upgrades.airJump.level > 0}
-                        style={{ backgroundColor: gameState.upgrades.airJump.level > 0 ? '#7f8c8d' : '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
-                      >
-                        {gameState.upgrades.airJump.level > 0 ? 'MAX' : `$${gameState.upgrades.airJump.cost}`}
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
-                      <div>
-                        <div>Critical Chance (Lvl {gameState.upgrades.critChance.level})</div>
-                        <div style={{ fontSize: '10px', color: '#7f8c8d' }}>+5% Crit Rate</div>
-                      </div>
-                      <button
-                        onClick={() => engineRef.current?.buyUpgrade('critChance')}
-                        style={{ backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
-                      >
-                        ${gameState.upgrades.critChance.cost}
-                      </button>
-                    </div>
-
-                    <h4 style={{ marginTop: '10px', color: selectedHero.color }}>HERO SKILLS ({selectedHero.name})</h4>
-                    {selectedHero.heroTraits && Object.keys(selectedHero.heroTraits).map(tKey => {
-                      const traitDef = selectedHero.heroTraits[tKey];
-                      const curLvl = gameState.heroUpgradeLevels[tKey] || 0;
-                      const curCost = Math.floor(traitDef.cost * Math.pow(1.4, curLvl));
-                      return (
-                        <div key={tKey} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
-                          <div>
-                            <div>{traitDef.name} (Lvl {curLvl})</div>
-                            <div style={{ fontSize: '10px', color: '#7f8c8d' }}>{traitDef.desc}</div>
-                          </div>
-                          <button
-                            onClick={() => engineRef.current?.buyHeroUpgrade(tKey)}
-                            style={{ backgroundColor: '#3498db', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
-                          >
-                            ${curCost}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <div style={{ marginTop: 'auto' }}>
-                  <div style={{ fontSize: '12px', color: '#bdc3c7', marginBottom: '5px' }}>HOTBAR ABILITIES:</div>
-                  <div style={{ display: 'flex', gap: '5px' }}>
-                    {gameState.abilities.map((ab, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          flex: 1,
-                          backgroundColor: '#1a252f',
-                          border: `2px solid ${ab.color}`,
-                          borderRadius: '4px',
-                          padding: '5px',
-                          textAlign: 'center',
-                          fontSize: '11px',
-                          position: 'relative'
-                        }}
-                      >
-                        <div style={{ fontWeight: 'bold', color: ab.color }}>[{ab.key}]</div>
-                        <div style={{ fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden' }}>{ab.name}</div>
-                        {ab.currentCd > 0 && (
-                          <div style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            backgroundColor: 'rgba(0,0,0,0.7)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 'bold',
-                            color: '#f1c40f'
-                          }}>
-                            {Math.ceil(ab.currentCd)}s
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          )}
-        </div>
+                    }
+                  }, 'Select')
+                ))
+              )
+            ),
+            gameState.waveState === 'GAMEOVER' && e('div', {
+              style: {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0,0,0,0.9)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: '8px'
+              }
+            },
+              e('h1', { style: { color: '#e74c3c', fontSize: '48px', margin: 0 } }, 'YOU WERE SLAIN'),
+              e('p', null, 'Physical traits reset. Gems are retained!'),
+              e('button', {
+                onClick: () => setGameState(prev => Object.assign({}, prev, { waveState: 'HERO_SELECT' })),
+                style: {
+                  backgroundColor: '#e74c3c',
+                  border: 'none',
+                  padding: '10px 25px',
+                  fontSize: '18px',
+                  color: '#fff',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  marginTop: '15px'
+                }
+              }, 'Return to Hero Select')
+            )
+          ),
+          e('div', {
+            style: {
+              width: '280px',
+              backgroundColor: '#2c3e50',
+              borderRadius: '8px',
+              padding: '15px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '15px'
+            }
+          },
+            e('div', { style: { display: 'flex', gap: '5px' } },
+              e('button', {
+                onClick: () => setActiveTab('GACHA'),
+                style: {
+                  flex: 1,
+                  padding: '8px',
+                  backgroundColor: activeTab === 'GACHA' ? '#34495e' : '#1a252f',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }
+              }, 'SWORD ROLL'),
+              e('button', {
+                onClick: () => setActiveTab('TRAITS'),
+                style: {
+                  flex: 1,
+                  padding: '8px',
+                  backgroundColor: activeTab === 'TRAITS' ? '#34495e' : '#1a252f',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }
+              }, 'TRAITS')
+            ),
+            activeTab === 'GACHA' ? e('div', { style: { textAlign: 'center' } },
+              e('h3', null, 'Equipped Weapon'),
+              e('div', {
+                style: {
+                  backgroundColor: '#1a252f',
+                  padding: '12px',
+                  borderRadius: '6px',
+                  borderLeft: '5px solid ' + gameState.sword.color
+                }
+              },
+                e('div', { style: { color: gameState.sword.color, fontWeight: 'bold' } }, gameState.sword.name),
+                e('div', { style: { fontSize: '12px', color: '#7f8c8d' } }, 'Rarity: ' + gameState.sword.rarity),
+                e('div', { style: { fontSize: '16px', marginTop: '5px' } }, 'Damage: ', e('strong', null, gameState.sword.damage))
+              ),
+              e('div', { style: { marginTop: '20px', position: 'relative' } },
+                gameState.lastRollResult && e('div', {
+                  style: {
+                    backgroundColor: 'rgba(52, 73, 94, 0.9)',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    marginBottom: '10px',
+                    border: '1px solid ' + gameState.lastRollResult.color
+                  }
+                },
+                  e('div', { style: { fontSize: '11px' } }, 'Rolled:'),
+                  e('div', { style: { color: gameState.lastRollResult.color } }, gameState.lastRollResult.name + ' (' + gameState.lastRollResult.damage + ' Dmg)')
+                ),
+                e('button', {
+                  onClick: () => engineRef.current && engineRef.current.rollGacha(),
+                  style: {
+                    width: '100%',
+                    backgroundColor: '#f1c40f',
+                    border: 'none',
+                    padding: '12px',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    color: '#2c3e50'
+                  }
+                }, 'ROLL SWORD ($100)')
+              )
+            ) : e('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' } },
+              e('h4', null, 'GLOBAL TRAITS'),
+              e('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' } },
+                e('div', null, e('div', null, 'Strength (Lvl ' + gameState.upgrades.strength.level + ')'), e('div', { style: { fontSize: '10px', color: '#7f8c8d' } }, '+5% Total Damage')),
+                e('button', { onClick: () => engineRef.current && engineRef.current.buyUpgrade('strength'), style: { backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' } }, '$' + gameState.upgrades.strength.cost)
+              ),
+              e('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' } },
+                e('div', null, e('div', null, 'Speed (Lvl ' + gameState.upgrades.speed.level + ')'), e('div', { style: { fontSize: '10px', color: '#7f8c8d' } }, '+2% Move Speed')),
+                e('button', { onClick: () => engineRef.current && engineRef.current.buyUpgrade('speed'), style: { backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' } }, '$' + gameState.upgrades.speed.cost)
+              ),
+              e('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' } },
+                e('div', null, e('div', null, 'Dash [Q] (Lvl ' + gameState.upgrades.dash.level + ')'), e('div', { style: { fontSize: '10px', color: '#7f8c8d' } }, 'Faster / Quicker Cd')),
+                e('button', { onClick: () => engineRef.current && engineRef.current.buyUpgrade('dash'), style: { backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' } }, '$' + gameState.upgrades.dash.cost)
+              ),
+              e('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' } },
+                e('div', null, e('div', null, 'Air Jump (Double)'), e('div', { style: { fontSize: '10px', color: '#7f8c8d' } }, 'Extra Boost Jump')),
+                e('button', {
+                  onClick: () => engineRef.current && engineRef.current.buyUpgrade('airJump'),
+                  disabled: gameState.upgrades.airJump.level > 0,
+                  style: { backgroundColor: gameState.upgrades.airJump.level > 0 ? '#7f8c8d' : '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }
+                }, gameState.upgrades.airJump.level > 0 ? 'MAX' : '$' + gameState.upgrades.airJump.cost)
+              ),
+              e('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' } },
+                e('div', null, e('div', null, 'Critical Chance (Lvl ' + gameState.upgrades.critChance.level + ')'), e('div', { style: { fontSize: '10px', color: '#7f8c8d' } }, '+5% Crit Rate')),
+                e('button', { onClick: () => engineRef.current && engineRef.current.buyUpgrade('critChance'), style: { backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' } }, '$' + gameState.upgrades.critChance.cost)
+              ),
+              e('h4', { style: { marginTop: '10px', color: selectedHero.color } }, 'HERO SKILLS (' + selectedHero.name + ')'),
+              selectedHero.heroTraits && Object.keys(selectedHero.heroTraits).map(tKey => {
+                const traitDef = selectedHero.heroTraits[tKey];
+                const curLvl = gameState.heroUpgradeLevels[tKey] || 0;
+                const curCost = Math.floor(traitDef.cost * Math.pow(1.4, curLvl));
+                return e('div', { key: tKey, style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' } },
+                  e('div', null, e('div', null, traitDef.name + ' (Lvl ' + curLvl + ')'), e('div', { style: { fontSize: '10px', color: '#7f8c8d' } }, traitDef.desc)),
+                  e('button', { onClick: () => engineRef.current && engineRef.current.buyHeroUpgrade(tKey), style: { backgroundColor: '#3498db', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' } }, '$' + curCost)
+                );
+              })
+            ),
+            e('div', { style: { marginTop: 'auto' } },
+              e('div', { style: { fontSize: '12px', color: '#bdc3c7', marginBottom: '5px' } }, 'HOTBAR ABILITIES:'),
+              e('div', { style: { display: 'flex', gap: '5px' } },
+                gameState.abilities.map((ab, idx) => e('div', {
+                  key: idx,
+                  style: {
+                    flex: 1,
+                    backgroundColor: '#1a252f',
+                    border: '2px solid ' + ab.color,
+                    borderRadius: '4px',
+                    padding: '5px',
+                    textAlign: 'center',
+                    fontSize: '11px',
+                    position: 'relative'
+                  }
+                },
+                  e('div', { style: { fontWeight: 'bold', color: ab.color } }, '[' + ab.key + ']'),
+                  e('div', { style: { fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden' } }, ab.name),
+                  ab.currentCd > 0 && e('div', {
+                    style: {
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 'bold',
+                      color: '#f1c40f'
+                    }
+                  }, Math.ceil(ab.currentCd) + 's')
+                ))
+              )
+            )
+          )
+        )
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(e(App));
   </script>
 </body>
 </html>
