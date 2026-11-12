@@ -1,14 +1,1834 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Monster Palace</title>
-  </head>
-  <body>
-    <main>
-      <h1>Monster Palace</h1>
-      <p>A palace full of monsters.</p>
-    </main>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monster Wave Slayer</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1a252f;
+      color: #ffffff;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const HEROES = [
+      {
+        id: 'squire',
+        name: 'Squire',
+        cost: 0,
+        hp: 120,
+        speed: 4,
+        color: '#3498db',
+        desc: 'Balanced starter knight with powerful slashing techniques.',
+        startingAbility: {
+          id: 'slash_init',
+          name: 'Grand Slash',
+          cooldown: 15,
+          currentCd: 0,
+          key: 'Z',
+          type: 'SLASH',
+          element: 'PHYSICAL',
+          color: '#e74c3c',
+          damage: 150,
+          description: 'Creates a massive horizontal slash through enemies.'
+        },
+        heroTraits: {
+          slashSize: { name: 'Slash Arc Size', level: 0, cost: 50, desc: '+15% Slash scale per level' },
+          doubleSlash: { name: 'Double Slash', level: 0, cost: 150, desc: 'Adds an echoing second slash hit' }
+        }
+      },
+      {
+        id: 'pyro',
+        name: 'Pyromancer',
+        cost: 10,
+        hp: 90,
+        speed: 4.2,
+        color: '#e67e22',
+        desc: 'Glass cannon that burns hordes with fiery blasts.',
+        startingAbility: {
+          id: 'pyro_init',
+          name: 'Inferno Blast',
+          cooldown: 12,
+          currentCd: 0,
+          key: 'Z',
+          type: 'BLAST',
+          element: 'FIRE',
+          color: '#d35400',
+          damage: 180,
+          description: 'Summons a fiery explosion on the nearest enemy.'
+        },
+        heroTraits: {
+          flameRadius: { name: 'Flame Radius', level: 0, cost: 60, desc: '+10% blast radius per level' },
+          burnDuration: { name: 'Ignition Time', level: 0, cost: 120, desc: '+1s burn duration' }
+        }
+      },
+      {
+        id: 'valkyrie',
+        name: 'Frost Valkyrie',
+        cost: 20,
+        hp: 150,
+        speed: 3.8,
+        color: '#1abc9c',
+        desc: 'Sturdy warrior who freezes enemies in their tracks.',
+        startingAbility: {
+          id: 'valk_init',
+          name: 'Glacial Strike',
+          cooldown: 14,
+          currentCd: 0,
+          key: 'Z',
+          type: 'STRIKE',
+          element: 'ICE',
+          color: '#2980b9',
+          damage: 120,
+          description: 'Strikes enemies and freezes them solid.'
+        },
+        heroTraits: {
+          freezeDuration: { name: 'Deep Freeze', level: 0, cost: 70, desc: '+0.8s freeze duration' },
+          frostArmor: { name: 'Frost Armor', level: 0, cost: 140, desc: '+10% defense when freezing' }
+        }
+      },
+      {
+        id: 'void',
+        name: 'Void Warden',
+        cost: 30,
+        hp: 110,
+        speed: 4.5,
+        color: '#9b59b6',
+        desc: 'Mystic controller who channels shadowy wave energy.',
+        startingAbility: {
+          id: 'void_init',
+          name: 'Void Wave',
+          cooldown: 10,
+          currentCd: 0,
+          key: 'Z',
+          type: 'WAVE',
+          element: 'SHADOW',
+          color: '#8e44ad',
+          damage: 130,
+          description: 'Releases a dark energy wave across the ground.'
+        },
+        heroTraits: {
+          voidReach: { name: 'Void Reach', level: 0, cost: 80, desc: '+20% wave travel distance' },
+          shadowLifesteal: { name: 'Shadow Drain', level: 0, cost: 200, desc: 'Heals 2% of damage dealt' }
+        }
+      },
+      {
+        id: 'venom',
+        name: 'Venom Ranger',
+        cost: 40,
+        hp: 100,
+        speed: 4.8,
+        color: '#2ecc71',
+        desc: 'Lethal marksperson who melts targets with toxic blights.',
+        startingAbility: {
+          id: 'venom_init',
+          name: 'Toxic Torrent',
+          cooldown: 11,
+          currentCd: 0,
+          key: 'Z',
+          type: 'BOLT',
+          element: 'TOXIC',
+          color: '#27ae60',
+          damage: 140,
+          description: 'Fires high-velocity acid bolts.'
+        },
+        heroTraits: {
+          poisonStacking: { name: 'Corrosive Acid', level: 0, cost: 75, desc: '+15% poison tick damage' },
+          venomSpeed: { name: 'Agile Stride', level: 0, cost: 110, desc: '+5% base movement speed' }
+        }
+      },
+      {
+        id: 'storm',
+        name: 'Storm Bringer',
+        cost: 50,
+        hp: 105,
+        speed: 4.4,
+        color: '#f1c40f',
+        desc: 'Lightning adept who calls down sudden electrical strikes.',
+        startingAbility: {
+          id: 'storm_init',
+          name: 'Thunderbolt',
+          cooldown: 9,
+          currentCd: 0,
+          key: 'Z',
+          type: 'STRIKE',
+          element: 'VOLT',
+          color: '#f39c12',
+          damage: 160,
+          description: 'Strikes target location with lightning bolt.'
+        },
+        heroTraits: {
+          shockChain: { name: 'Chain Lightning', level: 0, cost: 100, desc: '+1 extra bolt target' },
+          overcharge: { name: 'Overcharge', level: 0, cost: 180, desc: '+10% attack speed' }
+        }
+      },
+      {
+        id: 'blood',
+        name: 'Blood Knight',
+        cost: 65,
+        hp: 160,
+        speed: 3.6,
+        color: '#c0392b',
+        desc: 'Resilient brawler empowered by taking and dealing damage.',
+        startingAbility: {
+          id: 'blood_init',
+          name: 'Vampiric Slash',
+          cooldown: 16,
+          currentCd: 0,
+          key: 'Z',
+          type: 'SLASH',
+          element: 'PHYSICAL',
+          color: '#900c3f',
+          damage: 170,
+          description: 'Heavy slash that converts damage to health.'
+        },
+        heroTraits: {
+          sanguineSiphon: { name: 'Blood Siphon', level: 0, cost: 120, desc: '+3% lifesteal on melee' },
+          berserkResilience: { name: 'Thicker Skin', level: 0, cost: 150, desc: '+20 max base HP' }
+        }
+      },
+      {
+        id: 'ninja',
+        name: 'Shadow Ninja',
+        cost: 80,
+        hp: 85,
+        speed: 5.5,
+        color: '#34495e',
+        desc: 'Ultra-agile assassin specializing in rapid critical strikes.',
+        startingAbility: {
+          id: 'ninja_init',
+          name: 'Shadow Step',
+          cooldown: 8,
+          currentCd: 0,
+          key: 'Z',
+          type: 'BLAST',
+          element: 'SHADOW',
+          color: '#2c3e50',
+          damage: 190,
+          description: 'Teleports behind an enemy with a burst attack.'
+        },
+        heroTraits: {
+          assassinCrit: { name: 'Lethal Precision', level: 0, cost: 130, desc: '+5% critical chance' },
+          shadowDash: { name: 'Blink Dash', level: 0, cost: 160, desc: 'Dash cooldown reduced by 25%' }
+        }
+      },
+      {
+        id: 'paladin',
+        name: 'Sun Paladin',
+        cost: 100,
+        hp: 175,
+        speed: 3.5,
+        color: '#f39c12',
+        desc: 'Holy defender surrounded by sacred radiant barriers.',
+        startingAbility: {
+          id: 'pala_init',
+          name: 'Holy Ray',
+          cooldown: 14,
+          currentCd: 0,
+          key: 'Z',
+          type: 'STRIKE',
+          element: 'PHYSICAL',
+          color: '#f1c40f',
+          damage: 200,
+          description: 'Beam of holy energy smites foes.'
+        },
+        heroTraits: {
+          radiantAura: { name: 'Aura of Light', level: 0, cost: 140, desc: 'Damages nearby foes constantly' },
+          blessedShield: { name: 'Divine Ward', level: 0, cost: 190, desc: '+25% max HP boost' }
+        }
+      },
+      {
+        id: 'necro',
+        name: 'Necromancer',
+        cost: 120,
+        hp: 95,
+        speed: 4.0,
+        color: '#8e44ad',
+        desc: 'Master of death who turns slain enemies into ally thralls.',
+        startingAbility: {
+          id: 'necro_init',
+          name: 'Raise Thrall',
+          cooldown: 18,
+          currentCd: 0,
+          key: 'Z',
+          type: 'BLAST',
+          element: 'NECRO',
+          color: '#5b2c6f',
+          damage: 110,
+          description: 'Causes enemies to turn against each other.'
+        },
+        heroTraits: {
+          thrallDuration: { name: 'Soul Bind', level: 0, cost: 150, desc: '+2s zombify duration' },
+          darkHarvest: { name: 'Soul Harvester', level: 0, cost: 220, desc: '+20% gem drop chance from bosses' }
+        }
+      }
+    ];
+
+    const ABILITY_ELEMENTS = [
+      { name: 'Fire', color: '#e74c3c', type: 'FIRE' },
+      { name: 'Ice', color: '#3498db', type: 'ICE' },
+      { name: 'Toxic', color: '#2ecc71', type: 'TOXIC' },
+      { name: 'Necro', color: '#9b59b6', type: 'NECRO' },
+      { name: 'Volt', color: '#f1c40f', type: 'VOLT' }
+    ];
+
+    const ABILITY_FORMS = [
+      { name: 'Blast', type: 'BLAST', cd: 8 },
+      { name: 'Bolt', type: 'BOLT', cd: 5 },
+      { name: 'Strike', type: 'STRIKE', cd: 12 },
+      { name: 'Wave', type: 'WAVE', cd: 10 }
+    ];
+
+    const ABILITY_PREFIXES = ['Empowered', 'Sovereign', 'Cataclysmic', 'Abyssal', 'Radiant', 'Volcanic', 'Glacial', 'Tempest', 'Vicious', 'Ancient'];
+
+    function generateProceduralAbility(level = 1, fixedKey = null) {
+      const elem = ABILITY_ELEMENTS[Math.floor(Math.random() * ABILITY_ELEMENTS.length)];
+      const form = ABILITY_FORMS[Math.floor(Math.random() * ABILITY_FORMS.length)];
+      const prefix = ABILITY_PREFIXES[Math.floor(Math.random() * ABILITY_PREFIXES.length)];
+
+      const baseDmg = Math.floor((30 + level * 15) * (0.8 + Math.random() * 0.4));
+      const cd = Math.max(3, Math.floor(form.cd * (0.8 + Math.random() * 0.4)));
+
+      return {
+        id: 'ab_' + Math.random().toString(36).substr(2, 9),
+        name: `${prefix} ${elem.name} ${form.name}`,
+        cooldown: cd,
+        currentCd: 0,
+        key: fixedKey,
+        type: form.type,
+        element: elem.type,
+        color: elem.color,
+        damage: baseDmg,
+        description: `Deals ${baseDmg} ${elem.name.toLowerCase()} damage with ${form.name.toLowerCase()} effect.`
+      };
+    }
+
+    const SWORD_RARITIES = [
+      { name: 'Common', chance: 0.40, color: '#bdc3c7', multiplier: 1.0 },
+      { name: 'Uncommon', chance: 0.30, color: '#2ecc71', multiplier: 1.5 },
+      { name: 'Rare', chance: 0.18, color: '#3498db', multiplier: 2.2 },
+      { name: 'Epic', chance: 0.09, color: '#9b59b6', multiplier: 3.5 },
+      { name: 'Legendary', chance: 0.03, color: '#f1c40f', multiplier: 5.5 }
+    ];
+
+    const SWORD_NAMES = ['Slayer', 'Edge', 'Blade', 'Cleaver', 'Fang', 'Vengeance', 'Spire', 'Bane'];
+
+    function rollSword(wave = 1, pityCount = 0) {
+      let rand = Math.random();
+      if (pityCount >= 10) rand = 0.99;
+
+      let cumulative = 0;
+      let chosenRarity = SWORD_RARITIES[0];
+      for (const r of SWORD_RARITIES) {
+        cumulative += r.chance;
+        if (rand <= cumulative) {
+          chosenRarity = r;
+          break;
+        }
+      }
+
+      const baseDmg = 15 + wave * 5;
+      const name = `${chosenRarity.name} ${SWORD_NAMES[Math.floor(Math.random() * SWORD_NAMES.length)]}`;
+      const damage = Math.floor(baseDmg * chosenRarity.multiplier * (0.9 + Math.random() * 0.2));
+
+      return {
+        name,
+        rarity: chosenRarity.name,
+        color: chosenRarity.color,
+        damage
+      };
+    }
+
+    class GameEngine {
+      constructor(canvas, onStateUpdate) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.onStateUpdate = onStateUpdate;
+
+        this.running = false;
+        this.animId = null;
+
+        this.keys = {};
+
+        this.selectedHero = HEROES[0];
+        this.gems = 0;
+
+        this.resetPlayer();
+
+        this.wave = 1;
+        this.waveState = 'COMBAT';
+        this.monsters = [];
+        this.projectiles = [];
+        this.particles = [];
+        this.damageTexts = [];
+        this.platforms = [];
+
+        this.gachaPity = 0;
+        this.lastRollResult = null;
+        this.rollFadeTimer = 0;
+
+        this.upgrades = {
+          strength: { level: 0, cost: 50 },
+          speed: { level: 0, cost: 50 },
+          dash: { level: 0, cost: 100 },
+          airJump: { level: 0, cost: 150 },
+          critChance: { level: 0, cost: 80 }
+        };
+
+        this.heroUpgradeLevels = {};
+
+        this.bindEvents();
+      }
+
+      resetPlayer() {
+        const baseHp = (this.selectedHero ? this.selectedHero.hp : 120);
+        const baseSpeed = (this.selectedHero ? this.selectedHero.speed : 4);
+
+        this.player = {
+          x: 100,
+          y: 400,
+          vx: 0,
+          vy: 0,
+          width: 36,
+          height: 52,
+          facing: 'RIGHT',
+          hp: baseHp,
+          maxHp: baseHp,
+          speed: baseSpeed,
+          strengthMultiplier: 1.0,
+          critChance: 0.10,
+          isGrounded: false,
+          jumpsLeft: 1,
+          maxJumps: 1,
+          dashUnlocked: false,
+          dashCd: 0,
+          isDashing: false,
+          sword: { name: "Squire's Steel", rarity: 'Common', color: '#bdc3c7', damage: 20 },
+          abilities: [
+            this.selectedHero ? { ...this.selectedHero.startingAbility } : { ...HEROES[0].startingAbility }
+          ],
+          money: 0,
+          attackCooldown: 0,
+          isAttacking: false,
+          attackAnimTimer: 0
+        };
+
+        const slotKeys = ['Z', 'X', 'C'];
+        this.player.abilities.forEach((ab, idx) => {
+          ab.key = slotKeys[idx];
+          ab.currentCd = 0;
+        });
+      }
+
+      setHero(hero, savedGems = 0) {
+        this.selectedHero = hero;
+        this.gems = savedGems;
+        this.heroUpgradeLevels = {};
+        if (hero.heroTraits) {
+          Object.keys(hero.heroTraits).forEach(k => {
+            this.heroUpgradeLevels[k] = 0;
+          });
+        }
+        this.resetPlayer();
+      }
+
+      bindEvents() {
+        this.keydownHandler = (e) => {
+          const code = e.code;
+          this.keys[code] = true;
+
+          if (code === 'KeyQ') this.triggerDash();
+          if (code === 'KeyZ') this.triggerAbility(0);
+          if (code === 'KeyX') this.triggerAbility(1);
+          if (code === 'KeyC') this.triggerAbility(2);
+          if (code === 'Space' || code === 'ArrowUp' || code === 'KeyW') {
+            this.triggerJump();
+          }
+        };
+
+        this.keyupHandler = (e) => {
+          this.keys[e.code] = false;
+        };
+
+        window.addEventListener('keydown', this.keydownHandler);
+        window.addEventListener('keyup', this.keyupHandler);
+      }
+
+      unbindEvents() {
+        window.removeEventListener('keydown', this.keydownHandler);
+        window.removeEventListener('keyup', this.keyupHandler);
+      }
+
+      start() {
+        if (this.running) return;
+        this.running = true;
+        this.spawnWave();
+        this.lastTime = performance.now();
+        this.loop();
+      }
+
+      stop() {
+        this.running = false;
+        if (this.animId) cancelAnimationFrame(this.animId);
+      }
+
+      syncState() {
+        if (this.onStateUpdate) {
+          this.onStateUpdate({
+            playerHp: Math.ceil(this.player.hp),
+            playerMaxHp: this.player.maxHp,
+            money: this.player.money,
+            gems: this.gems,
+            wave: this.wave,
+            sword: this.player.sword,
+            abilities: [...this.player.abilities],
+            upgrades: { ...this.upgrades },
+            heroUpgradeLevels: { ...this.heroUpgradeLevels },
+            lastRollResult: this.lastRollResult,
+            waveState: this.waveState
+          });
+        }
+      }
+
+      spawnWave() {
+        this.monsters = [];
+        this.projectiles = [];
+        this.platforms = [];
+        const isBossWave = this.wave % 10 === 0;
+
+        if (isBossWave) {
+          this.monsters.push({
+            id: 'boss_' + this.wave,
+            type: 'BOSS',
+            name: `Palace Overlord Wave ${this.wave}`,
+            x: this.canvas.width - 150,
+            y: 350,
+            width: 80,
+            height: 110,
+            hp: 1200 + this.wave * 400,
+            maxHp: 1200 + this.wave * 400,
+            damage: 35 + this.wave * 5,
+            speed: 1.8,
+            color: '#8e44ad',
+            facing: 'LEFT',
+            attackCd: 0,
+            specialCd: 120
+          });
+
+          this.platforms = [
+            { x: 150, y: 380, width: 140, height: 16 },
+            { x: 400, y: 280, width: 160, height: 16 },
+            { x: 650, y: 380, width: 140, height: 16 }
+          ];
+        } else {
+          const baseCount = Math.min(3 + Math.floor(this.wave * 0.8), 8);
+
+          for (let i = 0; i < baseCount; i++) {
+            const randType = Math.random();
+            let mType = 'SLASHER';
+            let width = 36, height = 48, hp = 60 + this.wave * 15, speed = 2.2 + Math.random() * 0.5, color = '#e74c3c';
+
+            if (this.wave >= 4 && randType > 0.7) {
+              mType = 'TANK';
+              width = 54;
+              height = 68;
+              hp = 180 + this.wave * 35;
+              speed = 1.2;
+              color = '#7f8c8d';
+            } else if (randType > 0.45) {
+              mType = 'SPELLCASTER';
+              hp = 45 + this.wave * 10;
+              speed = 1.6;
+              color = '#9b59b6';
+            } else if (this.wave >= 2 && randType > 0.25) {
+              mType = 'ASSASSIN';
+              hp = 40 + this.wave * 12;
+              speed = 3.8;
+              color = '#e67e22';
+            }
+
+            const spawnOnRight = Math.random() > 0.3;
+            const xPos = spawnOnRight ? this.canvas.width + 50 + i * 70 : -50 - i * 70;
+
+            this.monsters.push({
+              id: `m_${this.wave}_${i}`,
+              type: mType,
+              x: xPos,
+              y: 400,
+              width,
+              height,
+              hp,
+              maxHp: hp,
+              damage: 10 + this.wave * 3,
+              speed,
+              color,
+              facing: spawnOnRight ? 'LEFT' : 'RIGHT',
+              attackCd: Math.floor(Math.random() * 40),
+              isTelegraphing: false,
+              telegraphTimer: 0,
+              zombified: false,
+              zombieTimer: 0
+            });
+          }
+        }
+
+        this.waveState = 'COMBAT';
+        this.syncState();
+      }
+
+      triggerJump() {
+        if (this.player.isGrounded) {
+          this.player.vy = -12.5;
+          this.player.isGrounded = false;
+          this.player.jumpsLeft = this.player.maxJumps - 1;
+        } else if (this.player.jumpsLeft > 0) {
+          this.player.vy = -16.0;
+          this.player.jumpsLeft--;
+
+          for (let i = 0; i < 12; i++) {
+            this.particles.push({
+              x: this.player.x + this.player.width / 2,
+              y: this.player.y + this.player.height,
+              vx: (Math.random() - 0.5) * 6,
+              vy: Math.random() * 3 + 1,
+              radius: Math.random() * 4 + 2,
+              color: '#3498db',
+              life: 20
+            });
+          }
+        }
+      }
+
+      triggerDash() {
+        if (!this.player.dashUnlocked || this.player.dashCd > 0) return;
+        this.player.isDashing = true;
+        const dashSpeed = 12 + (this.upgrades.dash.level * 2);
+        this.player.vx = this.player.facing === 'RIGHT' ? dashSpeed : -dashSpeed;
+        this.player.dashCd = Math.max(20, 60 - (this.upgrades.dash.level * 8));
+
+        for (let i = 0; i < 8; i++) {
+          this.particles.push({
+            x: this.player.x + Math.random() * this.player.width,
+            y: this.player.y + Math.random() * this.player.height,
+            vx: -this.player.vx * 0.2,
+            vy: (Math.random() - 0.5) * 2,
+            radius: Math.random() * 4 + 2,
+            color: '#f1c40f',
+            life: 15
+          });
+        }
+      }
+
+      triggerAbility(slotIdx) {
+        const ab = this.player.abilities[slotIdx];
+        if (!ab || ab.currentCd > 0) return;
+
+        ab.currentCd = ab.cooldown;
+        const isFacingRight = this.player.facing === 'RIGHT';
+        const pCenterX = this.player.x + this.player.width / 2;
+        const pCenterY = this.player.y + this.player.height / 2;
+
+        let dmg = Math.floor(ab.damage * this.player.strengthMultiplier);
+        
+        let isCrit = Math.random() < this.player.critChance;
+        if (isCrit) dmg = Math.floor(dmg * 2.0);
+
+        let slashScale = 1.0;
+        if (this.selectedHero.id === 'squire' && this.heroUpgradeLevels.slashSize) {
+          slashScale += this.heroUpgradeLevels.slashSize * 0.15;
+        }
+
+        if (ab.type === 'SLASH') {
+          const slashWidth = 140 * slashScale;
+          const slashHeight = 80 * slashScale;
+          const slashX = isFacingRight ? this.player.x + this.player.width : this.player.x - slashWidth;
+
+          this.projectiles.push({
+            type: 'SLASH',
+            x: slashX,
+            y: this.player.y - 15,
+            width: slashWidth,
+            height: slashHeight,
+            vx: isFacingRight ? 8 : -8,
+            vy: 0,
+            damage: dmg,
+            isCrit,
+            color: ab.color,
+            life: 25,
+            pierce: true,
+            facing: this.player.facing
+          });
+
+          if (this.selectedHero.id === 'squire' && this.heroUpgradeLevels.doubleSlash > 0) {
+            setTimeout(() => {
+              if (!this.running) return;
+              this.projectiles.push({
+                type: 'SLASH',
+                x: slashX,
+                y: this.player.y - 15,
+                width: slashWidth * 0.9,
+                height: slashHeight * 0.9,
+                vx: isFacingRight ? 9 : -9,
+                vy: 0,
+                damage: Math.floor(dmg * 0.6),
+                isCrit: false,
+                color: '#e74c3c',
+                life: 20,
+                pierce: true,
+                facing: this.player.facing
+              });
+            }, 150);
+          }
+        } else if (ab.type === 'BLAST') {
+          let target = null;
+          let minDist = Infinity;
+          this.monsters.forEach(m => {
+            const d = Math.hypot(m.x - pCenterX, m.y - pCenterY);
+            if (d < minDist) {
+              minDist = d;
+              target = m;
+            }
+          });
+
+          const blastX = target ? target.x + target.width / 2 : pCenterX + (isFacingRight ? 150 : -150);
+          const blastY = target ? target.y + target.height / 2 : pCenterY;
+
+          let radius = 90;
+          if (this.selectedHero.id === 'pyro' && this.heroUpgradeLevels.flameRadius) {
+            radius += this.heroUpgradeLevels.flameRadius * 9;
+          }
+
+          this.projectiles.push({
+            type: 'AOE_EXPLOSION',
+            x: blastX,
+            y: blastY,
+            radius,
+            damage: dmg,
+            isCrit,
+            color: ab.color,
+            element: ab.element,
+            life: 15
+          });
+        } else if (ab.type === 'BOLT') {
+          this.projectiles.push({
+            type: 'PLAYER_BOLT',
+            x: pCenterX,
+            y: pCenterY,
+            vx: isFacingRight ? 14 : -14,
+            vy: 0,
+            radius: 12,
+            damage: dmg,
+            isCrit,
+            color: ab.color,
+            element: ab.element,
+            life: 60
+          });
+        } else if (ab.type === 'STRIKE') {
+          this.projectiles.push({
+            type: 'STRIKE_BEAM',
+            x: pCenterX + (isFacingRight ? 100 : -100),
+            y: 0,
+            width: 60,
+            height: 500,
+            damage: dmg,
+            isCrit,
+            color: ab.color,
+            element: ab.element,
+            life: 20
+          });
+        } else if (ab.type === 'WAVE') {
+          let reach = 10;
+          if (this.selectedHero.id === 'void' && this.heroUpgradeLevels.voidReach) {
+            reach += this.heroUpgradeLevels.voidReach * 2;
+          }
+          this.projectiles.push({
+            type: 'GROUND_WAVE',
+            x: pCenterX,
+            y: 430,
+            width: 50,
+            height: 50,
+            vx: isFacingRight ? reach : -reach,
+            damage: dmg,
+            isCrit,
+            color: ab.color,
+            element: ab.element,
+            life: 45
+          });
+        }
+      }
+
+      buyUpgrade(type) {
+        const upg = this.upgrades[type];
+        if (!upg || this.player.money < upg.cost) return false;
+
+        this.player.money -= upg.cost;
+        upg.level++;
+        upg.cost = Math.floor(upg.cost * 1.5);
+
+        if (type === 'strength') {
+          this.player.strengthMultiplier += 0.05;
+        } else if (type === 'speed') {
+          this.player.speed *= 1.02;
+        } else if (type === 'dash') {
+          this.player.dashUnlocked = true;
+        } else if (type === 'airJump') {
+          this.player.maxJumps = 2;
+        } else if (type === 'critChance') {
+          this.player.critChance += 0.05;
+        }
+
+        this.syncState();
+        return true;
+      }
+
+      buyHeroUpgrade(traitKey) {
+        if (!this.selectedHero || !this.selectedHero.heroTraits) return false;
+        const traitDef = this.selectedHero.heroTraits[traitKey];
+        if (!traitDef) return false;
+
+        const currentLvl = this.heroUpgradeLevels[traitKey] || 0;
+        const currentCost = Math.floor(traitDef.cost * Math.pow(1.4, currentLvl));
+
+        if (this.player.money < currentCost) return false;
+
+        this.player.money -= currentCost;
+        this.heroUpgradeLevels[traitKey] = currentLvl + 1;
+
+        this.syncState();
+        return true;
+      }
+
+      rollGacha() {
+        const cost = 100;
+        if (this.player.money < cost) return;
+
+        this.player.money -= cost;
+        this.gachaPity++;
+
+        const newSword = rollSword(this.wave, this.gachaPity);
+        this.lastRollResult = newSword;
+        this.rollFadeTimer = 180;
+
+        if (newSword.rarity === 'Epic' || newSword.rarity === 'Legendary') {
+          this.gachaPity = 0;
+        }
+
+        if (newSword.damage > this.player.sword.damage) {
+          this.player.sword = newSword;
+        }
+
+        this.syncState();
+      }
+
+      selectAbilityDraft(chosenAbility) {
+        if (this.player.abilities.length < 3) {
+          const keys = ['Z', 'X', 'C'];
+          chosenAbility.key = keys[this.player.abilities.length];
+          this.player.abilities.push(chosenAbility);
+        } else {
+          chosenAbility.key = this.player.abilities[0].key;
+          this.player.abilities.shift();
+          this.player.abilities.push(chosenAbility);
+          const slotKeys = ['Z', 'X', 'C'];
+          this.player.abilities.forEach((ab, idx) => ab.key = slotKeys[idx]);
+        }
+
+        this.waveState = 'COMBAT';
+        this.wave++;
+        this.spawnWave();
+      }
+
+      update(dt) {
+        if (this.player.hp < this.player.maxHp) {
+          this.player.hp = Math.min(this.player.maxHp, this.player.hp + (this.player.maxHp * 0.02) * dt);
+        }
+
+        if (this.player.dashCd > 0) this.player.dashCd--;
+        this.player.abilities.forEach(ab => {
+          if (ab.currentCd > 0) ab.currentCd = Math.max(0, ab.currentCd - dt);
+        });
+
+        if (this.rollFadeTimer > 0) {
+          this.rollFadeTimer--;
+          if (this.rollFadeTimer <= 0) this.lastRollResult = null;
+        }
+
+        if (!this.player.isDashing) {
+          if (this.keys['ArrowLeft'] || this.keys['KeyA']) {
+            this.player.vx = -this.player.speed;
+            this.player.facing = 'LEFT';
+          } else if (this.keys['ArrowRight'] || this.keys['KeyD']) {
+            this.player.vx = this.player.speed;
+            this.player.facing = 'RIGHT';
+          } else {
+            this.player.vx *= 0.7;
+          }
+        } else {
+          this.player.vx *= 0.92;
+          if (Math.abs(this.player.vx) < this.player.speed) {
+            this.player.isDashing = false;
+          }
+        }
+
+        this.player.vy += 0.65;
+        this.player.x += this.player.vx;
+        this.player.y += this.player.vy;
+
+        const groundLevel = 450 - this.player.height;
+        if (this.player.y >= groundLevel) {
+          this.player.y = groundLevel;
+          this.player.vy = 0;
+          this.player.isGrounded = true;
+          this.player.jumpsLeft = this.player.maxJumps;
+        } else {
+          this.player.isGrounded = false;
+        }
+
+        for (const plat of this.platforms) {
+          if (
+            this.player.vy >= 0 &&
+            this.player.x + this.player.width > plat.x &&
+            this.player.x < plat.x + plat.width &&
+            this.player.y + this.player.height >= plat.y &&
+            this.player.y + this.player.height <= plat.y + plat.height + 10
+          ) {
+            this.player.y = plat.y - this.player.height;
+            this.player.vy = 0;
+            this.player.isGrounded = true;
+            this.player.jumpsLeft = this.player.maxJumps;
+          }
+        }
+
+        this.player.x = Math.max(0, Math.min(this.canvas.width - this.player.width, this.player.x));
+
+        if (this.keys['KeyJ'] && this.player.attackCooldown <= 0) {
+          this.player.attackCooldown = 20;
+          this.player.isAttacking = true;
+          this.player.attackAnimTimer = 10;
+          this.performMeleeAttack();
+        }
+        if (this.player.attackCooldown > 0) this.player.attackCooldown--;
+        if (this.player.attackAnimTimer > 0) this.player.attackAnimTimer--;
+
+        this.monsters.forEach(m => {
+          if (m.zombified) {
+            m.zombieTimer--;
+            if (m.zombieTimer <= 0) m.zombified = false;
+          }
+
+          const targetX = m.zombified
+            ? (this.monsters.find(other => other !== m && !other.zombified)?.x || this.player.x)
+            : this.player.x;
+
+          m.facing = targetX > m.x ? 'RIGHT' : 'LEFT';
+
+          if (m.type === 'SLASHER' || m.type === 'ASSASSIN' || m.zombified) {
+            if (Math.abs(m.x - targetX) > 40) {
+              m.x += m.facing === 'RIGHT' ? m.speed : -m.speed;
+            } else {
+              if (m.attackCd <= 0) {
+                m.attackCd = m.type === 'ASSASSIN' ? 40 : 60;
+                if (!m.zombified) {
+                  this.damagePlayer(m.damage);
+                } else {
+                  this.monsters.forEach(other => {
+                    if (other !== m && !other.zombified && Math.abs(other.x - m.x) < 60) {
+                      other.hp -= m.damage * 2;
+                      this.addDamageText(other.x, other.y, m.damage * 2, '#9b59b6');
+                    }
+                  });
+                }
+              }
+            }
+          } else if (m.type === 'TANK') {
+            if (Math.abs(m.x - targetX) > 60) {
+              m.x += m.facing === 'RIGHT' ? m.speed : -m.speed;
+            } else {
+              if (!m.isTelegraphing && m.attackCd <= 0) {
+                m.isTelegraphing = true;
+                m.telegraphTimer = 35;
+              }
+            }
+
+            if (m.isTelegraphing) {
+              m.telegraphTimer--;
+              if (m.telegraphTimer <= 0) {
+                m.isTelegraphing = false;
+                m.attackCd = 90;
+                if (Math.abs(m.x - this.player.x) < 80) {
+                  this.damagePlayer(m.damage);
+                }
+              }
+            }
+          } else if (m.type === 'SPELLCASTER') {
+            const desiredDist = 250;
+            const curDist = Math.abs(m.x - targetX);
+            if (curDist < desiredDist - 20) {
+              m.x += m.facing === 'RIGHT' ? -m.speed : m.speed;
+            } else if (curDist > desiredDist + 20) {
+              m.x += m.facing === 'RIGHT' ? m.speed : -m.speed;
+            }
+
+            if (m.attackCd <= 0) {
+              m.attackCd = 90;
+              this.projectiles.push({
+                type: 'MONSTER_ORB',
+                x: m.x + m.width / 2,
+                y: m.y + m.height / 2,
+                vx: m.facing === 'RIGHT' ? 5 : -5,
+                vy: 0,
+                radius: 8,
+                damage: m.damage,
+                color: '#9b59b6',
+                life: 120
+              });
+            }
+          } else if (m.type === 'BOSS') {
+            if (Math.abs(m.x - targetX) > 80) {
+              m.x += m.facing === 'RIGHT' ? m.speed : -m.speed;
+            }
+
+            m.specialCd--;
+            if (m.specialCd <= 0) {
+              m.specialCd = 180;
+              this.projectiles.push({
+                type: 'GROUND_WAVE',
+                x: m.x,
+                y: 430,
+                width: 80,
+                height: 40,
+                vx: m.facing === 'RIGHT' ? 6 : -6,
+                damage: m.damage * 1.5,
+                color: '#e74c3c',
+                life: 120,
+                isEnemy: true
+              });
+            }
+
+            if (m.attackCd <= 0 && Math.abs(m.x - this.player.x) < 100) {
+              m.attackCd = 50;
+              this.damagePlayer(m.damage);
+            }
+          }
+
+          if (m.attackCd > 0) m.attackCd--;
+        });
+
+        this.projectiles.forEach(p => {
+          p.life--;
+          p.x += p.vx || 0;
+          p.y += p.vy || 0;
+
+          if (!p.isEnemy) {
+            this.monsters.forEach(m => {
+              let hit = false;
+              if (p.type === 'SLASH' || p.type === 'STRIKE_BEAM' || p.type === 'GROUND_WAVE') {
+                hit = p.x < m.x + m.width && p.x + p.width > m.x && p.y < m.y + m.height && p.y + p.height > m.y;
+              } else if (p.type === 'AOE_EXPLOSION') {
+                const d = Math.hypot((p.x - (m.x + m.width / 2)), (p.y - (m.y + m.height / 2)));
+                hit = d <= p.radius;
+              } else if (p.type === 'PLAYER_BOLT') {
+                hit = Math.abs((p.x - (m.x + m.width / 2))) < m.width / 2 && Math.abs((p.y - (m.y + m.height / 2))) < m.height / 2;
+              }
+
+              if (hit && !p.hitMonsters?.has(m.id)) {
+                if (!p.hitMonsters) p.hitMonsters = new Set();
+                p.hitMonsters.add(m.id);
+
+                m.hp -= p.damage;
+                this.addDamageText(m.x + m.width / 2, m.y, p.damage, p.isCrit ? '#f1c40f' : '#ffffff', p.isCrit);
+
+                if (p.element === 'ICE') {
+                  m.speed *= 0.5;
+                } else if (p.element === 'NECRO') {
+                  m.zombified = true;
+                  m.zombieTimer = 180;
+                }
+
+                if (this.selectedHero.id === 'void' && this.heroUpgradeLevels.shadowLifesteal) {
+                  const heal = Math.ceil(p.damage * 0.02);
+                  this.player.hp = Math.min(this.player.maxHp, this.player.hp + heal);
+                }
+              }
+            });
+          } else {
+            if (Math.abs(p.x - (this.player.x + this.player.width / 2)) < 25 &&
+                Math.abs(p.y - (this.player.y + this.player.height / 2)) < 30) {
+              this.damagePlayer(p.damage);
+              p.life = 0;
+            }
+          }
+        });
+
+        this.projectiles = this.projectiles.filter(p => p.life > 0);
+
+        this.monsters = this.monsters.filter(m => {
+          if (m.hp <= 0) {
+            const reward = m.type === 'BOSS' ? 200 + this.wave * 50 : 15 + this.wave * 2;
+            this.player.money += reward;
+
+            if (m.type === 'BOSS') {
+              let extraGems = 0;
+              if (this.selectedHero.id === 'necro' && this.heroUpgradeLevels.darkHarvest) {
+                extraGems = 3;
+              }
+              const gemReward = Math.floor(Math.random() * 6) + 10 + extraGems;
+              this.gems += gemReward;
+              this.addDamageText(m.x, m.y - 20, `+${gemReward} GEMS!`, '#9b59b6', true);
+            } else {
+              if (Math.random() < 0.15) {
+                this.gems += 1;
+                this.addDamageText(m.x, m.y - 20, `+1 GEM!`, '#9b59b6');
+              }
+            }
+
+            for (let i = 0; i < 15; i++) {
+              this.particles.push({
+                x: m.x + m.width / 2,
+                y: m.y + m.height / 2,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                radius: Math.random() * 5 + 2,
+                color: m.color,
+                life: 25
+              });
+            }
+            return false;
+          }
+          return true;
+        });
+
+        if (this.monsters.length === 0 && this.waveState === 'COMBAT') {
+          if (this.wave % 10 === 0) {
+            this.waveState = 'DRAFT';
+            this.syncState();
+          } else {
+            this.wave++;
+            this.spawnWave();
+          }
+        }
+
+        this.particles.forEach(pt => {
+          pt.x += pt.vx;
+          pt.y += pt.vy;
+          pt.life--;
+        });
+        this.particles = this.particles.filter(pt => pt.life > 0);
+
+        this.damageTexts.forEach(dt => {
+          dt.y -= 1;
+          dt.life--;
+        });
+        this.damageTexts = this.damageTexts.filter(dt => dt.life > 0);
+
+        this.syncState();
+      }
+
+      performMeleeAttack() {
+        let dmg = Math.floor(this.player.sword.damage * this.player.strengthMultiplier);
+        let isCrit = Math.random() < this.player.critChance;
+        if (isCrit) dmg = Math.floor(dmg * 2.0);
+
+        const attackWidth = 60;
+        const isFacingRight = this.player.facing === 'RIGHT';
+        const attackX = isFacingRight ? this.player.x + this.player.width : this.player.x - attackWidth;
+
+        this.monsters.forEach(m => {
+          if (attackX < m.x + m.width && attackX + attackWidth > m.x &&
+              this.player.y < m.y + m.height && this.player.y + this.player.height > m.y) {
+            m.hp -= dmg;
+            this.addDamageText(m.x + m.width / 2, m.y, dmg, isCrit ? '#f1c40f' : '#ffffff', isCrit);
+
+            if (this.selectedHero.id === 'blood' && this.heroUpgradeLevels.sanguineSiphon) {
+              const lifesteal = Math.ceil(dmg * (this.heroUpgradeLevels.sanguineSiphon * 0.03));
+              this.player.hp = Math.min(this.player.maxHp, this.player.hp + lifesteal);
+            }
+          }
+        });
+      }
+
+      damagePlayer(amount) {
+        if (this.player.isDashing) return;
+        this.player.hp -= amount;
+        this.addDamageText(this.player.x + 10, this.player.y - 10, Math.floor(amount), '#e74c3c');
+
+        if (this.player.hp <= 0) {
+          this.player.hp = 0;
+          this.waveState = 'GAMEOVER';
+          this.syncState();
+        }
+      }
+
+      addDamageText(x, y, text, color = '#ffffff', isCrit = false) {
+        this.damageTexts.push({
+          x,
+          y,
+          text: isCrit ? `CRIT! ${text}` : text,
+          color,
+          isCrit,
+          life: 40
+        });
+      }
+
+      render() {
+        const { ctx, canvas } = this;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const themeHue = (this.wave * 25) % 360;
+        ctx.fillStyle = `hsl(${themeHue}, 20%, 12%)`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.strokeStyle = `hsl(${themeHue}, 30%, 22%)`;
+        ctx.lineWidth = 4;
+        for (let i = 50; i < canvas.width; i += 180) {
+          ctx.beginPath();
+          ctx.arc(i + 40, 140, 40, Math.PI, 0);
+          ctx.stroke();
+          ctx.strokeRect(i, 140, 80, 180);
+        }
+
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(0, 450, canvas.width, 50);
+        ctx.fillStyle = '#34495e';
+        ctx.fillRect(0, 450, canvas.width, 6);
+
+        ctx.fillStyle = '#e74c3c';
+        this.platforms.forEach(p => {
+          ctx.fillRect(p.x, p.y, p.width, p.height);
+          ctx.fillStyle = '#c0392b';
+          ctx.fillRect(p.x, p.y + p.height - 4, p.width, 4);
+        });
+
+        const p = this.player;
+        ctx.save();
+        ctx.fillStyle = this.selectedHero.color || p.sword.color;
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+        ctx.fillStyle = '#ffffff';
+        const eyeX = p.facing === 'RIGHT' ? p.x + p.width - 10 : p.x + 4;
+        ctx.fillRect(eyeX, p.y + 10, 6, 6);
+
+        if (p.isAttacking) {
+          ctx.strokeStyle = p.sword.color;
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          const arcX = p.facing === 'RIGHT' ? p.x + p.width + 10 : p.x - 10;
+          ctx.arc(arcX, p.y + p.height / 2, 35, -Math.PI / 3, Math.PI / 3);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        this.monsters.forEach(m => {
+          ctx.save();
+          ctx.fillStyle = m.zombified ? '#8e44ad' : m.color;
+
+          if (m.type === 'BOSS') {
+            ctx.fillRect(m.x, m.y, m.width, m.height);
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillRect(m.x + (m.facing === 'RIGHT' ? m.width - 18 : 6), m.y + 15, 12, 12);
+
+            ctx.fillStyle = '#c0392b';
+            ctx.fillRect(150, 20, 500, 16);
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(150, 20, Math.max(0, (m.hp / m.maxHp) * 500), 16);
+            ctx.strokeStyle = '#ffffff';
+            ctx.strokeRect(150, 20, 500, 16);
+          } else {
+            ctx.fillRect(m.x, m.y, m.width, m.height);
+
+            if (m.isTelegraphing) {
+              ctx.fillStyle = 'rgba(231, 76, 60, 0.6)';
+              ctx.fillRect(m.x - 10, m.y - 10, m.width + 20, m.height + 20);
+            }
+
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(m.x, m.y - 10, m.width, 6);
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(m.x, m.y - 10, (m.hp / m.maxHp) * m.width, 6);
+          }
+          ctx.restore();
+        });
+
+        this.projectiles.forEach(pr => {
+          ctx.save();
+          if (pr.type === 'SLASH') {
+            ctx.strokeStyle = pr.color;
+            ctx.lineWidth = 8;
+            ctx.shadowColor = pr.color;
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            const arcCenterX = pr.facing === 'RIGHT' ? pr.x : pr.x + pr.width;
+            ctx.arc(arcCenterX, pr.y + pr.height / 2, pr.width / 2, -Math.PI / 2, Math.PI / 2, pr.facing === 'LEFT');
+            ctx.stroke();
+          } else if (pr.type === 'AOE_EXPLOSION') {
+            ctx.fillStyle = pr.color;
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            ctx.arc(pr.x, pr.y, pr.radius, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (pr.type === 'PLAYER_BOLT' || pr.type === 'MONSTER_ORB') {
+            ctx.fillStyle = pr.color;
+            ctx.shadowColor = pr.color;
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(pr.x, pr.y, pr.radius, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (pr.type === 'STRIKE_BEAM') {
+            ctx.fillStyle = pr.color;
+            ctx.globalAlpha = 0.7;
+            ctx.fillRect(pr.x, pr.y, pr.width, pr.height);
+          } else if (pr.type === 'GROUND_WAVE') {
+            ctx.fillStyle = pr.color;
+            ctx.fillRect(pr.x, pr.y, pr.width, pr.height);
+          }
+          ctx.restore();
+        });
+
+        this.particles.forEach(pt => {
+          ctx.fillStyle = pt.color;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        this.damageTexts.forEach(dt => {
+          ctx.save();
+          ctx.font = dt.isCrit ? 'bold 20px sans-serif' : '15px sans-serif';
+          ctx.fillStyle = dt.color;
+          ctx.shadowColor = '#000000';
+          ctx.shadowBlur = 4;
+          ctx.fillText(dt.text, dt.x, dt.y);
+          ctx.restore();
+        });
+      }
+
+      loop() {
+        if (!this.running) return;
+        const now = performance.now();
+        const dt = Math.min((now - this.lastTime) / 1000, 0.1);
+        this.lastTime = now;
+
+        if (this.waveState === 'COMBAT') {
+          this.update(dt);
+        }
+        this.render();
+
+        this.animId = requestAnimationFrame(() => this.loop());
+      }
+    }
+
+    function App() {
+      const canvasRef = useRef(null);
+      const engineRef = useRef(null);
+
+      const [gameState, setGameState] = useState({
+        playerHp: 120,
+        playerMaxHp: 120,
+        money: 0,
+        gems: 0,
+        wave: 1,
+        sword: { name: "Squire's Steel", rarity: 'Common', color: '#bdc3c7', damage: 20 },
+        abilities: [],
+        upgrades: {
+          strength: { level: 0, cost: 50 },
+          speed: { level: 0, cost: 50 },
+          dash: { level: 0, cost: 100 },
+          airJump: { level: 0, cost: 150 },
+          critChance: { level: 0, cost: 80 }
+        },
+        heroUpgradeLevels: {},
+        lastRollResult: null,
+        waveState: 'HERO_SELECT'
+      });
+
+      const [unlockedHeroes, setUnlockedHeroes] = useState(['squire']);
+      const [selectedHero, setSelectedHero] = useState(HEROES[0]);
+      const [draftCards, setDraftCards] = useState([]);
+      const [activeTab, setActiveTab] = useState('GACHA');
+
+      useEffect(() => {
+        const engine = new GameEngine(canvasRef.current, (updated) => {
+          setGameState(prev => ({ ...prev, ...updated }));
+        });
+        engineRef.current = engine;
+
+        return () => engine.stop();
+      }, []);
+
+      const handleSelectHero = (hero) => {
+        if (!unlockedHeroes.includes(hero.id)) {
+          if (gameState.gems >= hero.cost) {
+            setGameState(prev => ({ ...prev, gems: prev.gems - hero.cost }));
+            setUnlockedHeroes(prev => [...prev, hero.id]);
+            setSelectedHero(hero);
+          }
+        } else {
+          setSelectedHero(hero);
+        }
+      };
+
+      const handleStartGame = () => {
+        if (!engineRef.current) return;
+        engineRef.current.setHero(selectedHero, gameState.gems);
+        engineRef.current.start();
+      };
+
+      useEffect(() => {
+        if (gameState.waveState === 'DRAFT') {
+          setDraftCards([
+            generateProceduralAbility(gameState.wave),
+            generateProceduralAbility(gameState.wave),
+            generateProceduralAbility(gameState.wave)
+          ]);
+        }
+      }, [gameState.waveState, gameState.wave]);
+
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          backgroundColor: '#1a252f',
+          minHeight: '100vh',
+          color: '#ffffff',
+          fontFamily: 'sans-serif',
+          padding: '20px'
+        }}>
+          <h1 style={{ margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '2px' }}>
+            Monster Wave Slayer
+          </h1>
+
+          <div style={{
+            display: 'flex',
+            gap: '20px',
+            fontSize: '18px',
+            backgroundColor: '#2c3e50',
+            padding: '10px 20px',
+            borderRadius: '8px',
+            marginBottom: '15px'
+          }}>
+            <span>Floor / Wave: <strong style={{ color: '#f1c40f' }}>{gameState.wave}</strong></span>
+            <span>Gold: <strong style={{ color: '#2ecc71' }}>${gameState.money}</strong></span>
+            <span>Gems: <strong style={{ color: '#9b59b6' }}>💎 {gameState.gems}</strong></span>
+            <span>HP: <strong style={{ color: '#e74c3c' }}>{gameState.playerHp} / {gameState.playerMaxHp}</strong></span>
+          </div>
+
+          {gameState.waveState === 'HERO_SELECT' && (
+            <div style={{
+              backgroundColor: '#2c3e50',
+              padding: '25px',
+              borderRadius: '12px',
+              maxWidth: '850px',
+              width: '100%',
+              textAlign: 'center'
+            }}>
+              <h2>Choose Your Hero</h2>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: '12px',
+                margin: '20px 0',
+                maxHeight: '400px',
+                overflowY: 'auto'
+              }}>
+                {HEROES.map(h => {
+                  const isUnlocked = unlockedHeroes.includes(h.id);
+                  const isSelected = selectedHero.id === h.id;
+                  return (
+                    <div
+                      key={h.id}
+                      onClick={() => handleSelectHero(h)}
+                      style={{
+                        backgroundColor: isSelected ? '#34495e' : '#1a252f',
+                        border: `3px solid ${isSelected ? h.color : (isUnlocked ? '#7f8c8d' : '#e74c3c')}`,
+                        borderRadius: '8px',
+                        padding: '10px',
+                        cursor: 'pointer',
+                        opacity: isUnlocked ? 1 : 0.75
+                      }}
+                    >
+                      <h3 style={{ margin: '5px 0', color: h.color }}>{h.name}</h3>
+                      <p style={{ fontSize: '11px', height: '36px', overflow: 'hidden' }}>{h.desc}</p>
+                      {!isUnlocked ? (
+                        <button style={{
+                          backgroundColor: '#9b59b6',
+                          border: 'none',
+                          color: '#fff',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}>
+                          Unlock (💎 {h.cost})
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '12px', color: '#2ecc71' }}>{isSelected ? 'SELECTED' : 'UNLOCKED'}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={handleStartGame}
+                style={{
+                  backgroundColor: '#2ecc71',
+                  border: 'none',
+                  padding: '12px 30px',
+                  fontSize: '20px',
+                  fontWeight: 'bold',
+                  color: '#fff',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                ASCEND PALACE
+              </button>
+            </div>
+          )}
+
+          {gameState.waveState !== 'HERO_SELECT' && (
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+              <div style={{ position: 'relative' }}>
+                <canvas
+                  ref={canvasRef}
+                  width={800}
+                  height={500}
+                  style={{
+                    border: '4px solid #34495e',
+                    borderRadius: '8px',
+                    backgroundColor: '#000'
+                  }}
+                />
+
+                {gameState.waveState === 'DRAFT' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderRadius: '8px'
+                  }}>
+                    <h2 style={{ color: '#f1c40f', marginBottom: '20px' }}>CHOOSE AN ABILITY CARD</h2>
+                    <div style={{ display: 'flex', gap: '15px' }}>
+                      {draftCards.map(card => (
+                        <div
+                          key={card.id}
+                          onClick={() => engineRef.current.selectAbilityDraft(card)}
+                          style={{
+                            backgroundColor: '#2c3e50',
+                            border: `3px solid ${card.color}`,
+                            borderRadius: '10px',
+                            padding: '15px',
+                            width: '180px',
+                            textAlign: 'center',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <h3 style={{ color: card.color, margin: '5px 0' }}>{card.name}</h3>
+                          <p style={{ fontSize: '13px', color: '#bdc3c7' }}>{card.description}</p>
+                          <div style={{ fontSize: '12px', marginTop: '10px' }}>Cooldown: {card.cooldown}s</div>
+                          <button style={{
+                            marginTop: '15px',
+                            backgroundColor: card.color,
+                            border: 'none',
+                            color: '#fff',
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}>
+                            Select
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {gameState.waveState === 'GAMEOVER' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.9)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderRadius: '8px'
+                  }}>
+                    <h1 style={{ color: '#e74c3c', fontSize: '48px', margin: 0 }}>YOU WERE SLAIN</h1>
+                    <p>Physical traits reset. Gems are retained!</p>
+                    <button
+                      onClick={() => {
+                        setGameState(prev => ({ ...prev, waveState: 'HERO_SELECT' }));
+                      }}
+                      style={{
+                        backgroundColor: '#e74c3c',
+                        border: 'none',
+                        padding: '10px 25px',
+                        fontSize: '18px',
+                        color: '#fff',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        marginTop: '15px'
+                      }}
+                    >
+                      Return to Hero Select
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div style={{
+                width: '280px',
+                backgroundColor: '#2c3e50',
+                borderRadius: '8px',
+                padding: '15px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px'
+              }}>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  <button
+                    onClick={() => setActiveTab('GACHA')}
+                    style={{
+                      flex: 1,
+                      padding: '8px',
+                      backgroundColor: activeTab === 'GACHA' ? '#34495e' : '#1a252f',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    SWORD ROLL
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('TRAITS')}
+                    style={{
+                      flex: 1,
+                      padding: '8px',
+                      backgroundColor: activeTab === 'TRAITS' ? '#34495e' : '#1a252f',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    TRAITS
+                  </button>
+                </div>
+
+                {activeTab === 'GACHA' && (
+                  <div style={{ textAlign: 'center' }}>
+                    <h3>Equipped Weapon</h3>
+                    <div style={{
+                      backgroundColor: '#1a252f',
+                      padding: '12px',
+                      borderRadius: '6px',
+                      borderLeft: `5px solid ${gameState.sword.color}`
+                    }}>
+                      <div style={{ color: gameState.sword.color, fontWeight: 'bold' }}>{gameState.sword.name}</div>
+                      <div style={{ fontSize: '12px', color: '#7f8c8d' }}>Rarity: {gameState.sword.rarity}</div>
+                      <div style={{ fontSize: '16px', marginTop: '5px' }}>Damage: <strong>{gameState.sword.damage}</strong></div>
+                    </div>
+
+                    <div style={{ marginTop: '20px', position: 'relative' }}>
+                      {gameState.lastRollResult && (
+                        <div style={{
+                          backgroundColor: 'rgba(52, 73, 94, 0.9)',
+                          padding: '8px',
+                          borderRadius: '4px',
+                          marginBottom: '10px',
+                          border: `1px solid ${gameState.lastRollResult.color}`
+                        }}>
+                          <div style={{ fontSize: '11px' }}>Rolled:</div>
+                          <div style={{ color: gameState.lastRollResult.color }}>{gameState.lastRollResult.name} ({gameState.lastRollResult.damage} Dmg)</div>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => engineRef.current?.rollGacha()}
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#f1c40f',
+                          border: 'none',
+                          padding: '12px',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          color: '#2c3e50'
+                        }}
+                      >
+                        ROLL SWORD ($100)
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'TRAITS' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
+                    <h4>GLOBAL TRAITS</h4>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
+                      <div>
+                        <div>Strength (Lvl {gameState.upgrades.strength.level})</div>
+                        <div style={{ fontSize: '10px', color: '#7f8c8d' }}>+5% Total Damage</div>
+                      </div>
+                      <button
+                        onClick={() => engineRef.current?.buyUpgrade('strength')}
+                        style={{ backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        ${gameState.upgrades.strength.cost}
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
+                      <div>
+                        <div>Speed (Lvl {gameState.upgrades.speed.level})</div>
+                        <div style={{ fontSize: '10px', color: '#7f8c8d' }}>+2% Move Speed</div>
+                      </div>
+                      <button
+                        onClick={() => engineRef.current?.buyUpgrade('speed')}
+                        style={{ backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        ${gameState.upgrades.speed.cost}
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
+                      <div>
+                        <div>Dash [Q] (Lvl {gameState.upgrades.dash.level})</div>
+                        <div style={{ fontSize: '10px', color: '#7f8c8d' }}>Faster / Quicker Cd</div>
+                      </div>
+                      <button
+                        onClick={() => engineRef.current?.buyUpgrade('dash')}
+                        style={{ backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        ${gameState.upgrades.dash.cost}
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
+                      <div>
+                        <div>Air Jump (Double)</div>
+                        <div style={{ fontSize: '10px', color: '#7f8c8d' }}>Extra Boost Jump</div>
+                      </div>
+                      <button
+                        onClick={() => engineRef.current?.buyUpgrade('airJump')}
+                        disabled={gameState.upgrades.airJump.level > 0}
+                        style={{ backgroundColor: gameState.upgrades.airJump.level > 0 ? '#7f8c8d' : '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        {gameState.upgrades.airJump.level > 0 ? 'MAX' : `$${gameState.upgrades.airJump.cost}`}
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
+                      <div>
+                        <div>Critical Chance (Lvl {gameState.upgrades.critChance.level})</div>
+                        <div style={{ fontSize: '10px', color: '#7f8c8d' }}>+5% Crit Rate</div>
+                      </div>
+                      <button
+                        onClick={() => engineRef.current?.buyUpgrade('critChance')}
+                        style={{ backgroundColor: '#2ecc71', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        ${gameState.upgrades.critChance.cost}
+                      </button>
+                    </div>
+
+                    <h4 style={{ marginTop: '10px', color: selectedHero.color }}>HERO SKILLS ({selectedHero.name})</h4>
+                    {selectedHero.heroTraits && Object.keys(selectedHero.heroTraits).map(tKey => {
+                      const traitDef = selectedHero.heroTraits[tKey];
+                      const curLvl = gameState.heroUpgradeLevels[tKey] || 0;
+                      const curCost = Math.floor(traitDef.cost * Math.pow(1.4, curLvl));
+                      return (
+                        <div key={tKey} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1a252f', padding: '6px 10px', borderRadius: '4px' }}>
+                          <div>
+                            <div>{traitDef.name} (Lvl {curLvl})</div>
+                            <div style={{ fontSize: '10px', color: '#7f8c8d' }}>{traitDef.desc}</div>
+                          </div>
+                          <button
+                            onClick={() => engineRef.current?.buyHeroUpgrade(tKey)}
+                            style={{ backgroundColor: '#3498db', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                          >
+                            ${curCost}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div style={{ marginTop: 'auto' }}>
+                  <div style={{ fontSize: '12px', color: '#bdc3c7', marginBottom: '5px' }}>HOTBAR ABILITIES:</div>
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    {gameState.abilities.map((ab, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          flex: 1,
+                          backgroundColor: '#1a252f',
+                          border: `2px solid ${ab.color}`,
+                          borderRadius: '4px',
+                          padding: '5px',
+                          textAlign: 'center',
+                          fontSize: '11px',
+                          position: 'relative'
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', color: ab.color }}>[{ab.key}]</div>
+                        <div style={{ fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden' }}>{ab.name}</div>
+                        {ab.currentCd > 0 && (
+                          <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                            color: '#f1c40f'
+                          }}>
+                            {Math.ceil(ab.currentCd)}s
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
 </html>
